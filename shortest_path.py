@@ -72,19 +72,61 @@ class MinHeap:
         return min_node
 
 
+class LinkedList:
+    """A linked list where each node points to the previous node.
+
+    Attributes:
+        tail: A Node object that represents the last node in the linked list
+    """
+
+    def __init__(self, tail):
+        """Set-up for the linked list."""
+        self.tail = tail
+
+    def to_list(self):
+        """Transforms the linked list node values to regular python list."""
+        linked_list = []
+        node = self.tail
+
+        while node is not None:
+            linked_list = [node.value] + linked_list
+            node = node.prev
+
+        return linked_list
+
+
+class Node:
+    """A node to store in a linked list.
+
+    Attributes:
+        value: The value to store in the node
+        distance: An int representing the shortest known distance from the
+            start node, defaults to infinity
+        prev: A Node object representing the previous node in the linked list
+    """
+
+    def __init__(self, value, distance, prev=None):
+        """Set-up for the linked list node."""
+        self.value = value
+        self.distance = distance
+        self.prev = prev
+
+
 def main():
     """Main function call to test the shortest_path function."""
     test(shortest_path)
 
 
-def shortest_path(graph, start, end):
+def shortest_path(graph, start_id, end_id):
     """Find the shortest path between nodes in a graph using the A* algorithm.
 
     Args:
         graph: A Map object representing the graph to find the shortest path
             within
-        start: An int representing the node in the graph the path will start at
-        end: An int representing the node in the graph the path will end at
+        start_id: An int representing the id of the node in the graph that the
+            path will start at
+        end_id: An int representing the id of the node in the graph the path
+            will end at
 
     Returns:
         path: A list of ints representing the shortest path of nodes to
@@ -93,50 +135,50 @@ def shortest_path(graph, start, end):
     visited = set()
     min_heap = MinHeap()
 
-    distance = distance_between_nodes(graph, start, start)
-    heuristic = distance_between_nodes(graph, start, end)
+    distance = distance_between_nodes(graph, start_id, start_id)
+    heuristic = distance_between_nodes(graph, start_id, end_id)
     estimated_distance = distance + heuristic
-    min_heap.push((estimated_distance, distance, [start]))
+    min_heap.push((estimated_distance, Node(start_id, distance)))
 
     while len(min_heap.heap) > 0:
-        _, distance, path = min_heap.pop()
-        current_node = path[-1]
-        visited.add(current_node)
+        node = min_heap.pop()[1]
+        visited.add(node.value)
 
-        if current_node == end:
+        if node.value == end_id:
+            path = LinkedList(node).to_list()
             return path
 
-        for node in graph.roads[current_node]:
-            if node not in visited:
-                updated_distance = distance + distance_between_nodes(
-                    graph, current_node, node
+        for node_id in graph.roads[node.value]:
+            if node_id not in visited:
+                distance = node.distance + distance_between_nodes(
+                    graph, node.value, node_id
                 )
-                heuristic = distance_between_nodes(graph, node, end)
-                estimated_distance = updated_distance + heuristic
+                heuristic = distance_between_nodes(graph, node_id, end_id)
+                estimated_distance = distance + heuristic
                 min_heap.push(
-                    (estimated_distance, updated_distance, path + [node])
+                    (estimated_distance, Node(node_id, distance, node))
                 )
 
     return None
 
 
-def distance_between_nodes(graph, node_1, node_2):
+def distance_between_nodes(graph, node_1_id, node_2_id):
     """Calculate the distance between two nodes in a given graph.
 
     Args:
         graph: A Map object representing the graph containing the nodes to find
             the distance between
-        node_1: An int representing the first node in the pair of nodes to find
-            the distance between
-        node_2: An int representing the second node in the pair of nodes to
-            find the distance between
+        node_1_id: An int representing the id of the first node in the pair of
+            nodes to find the distance between
+        node_2_id: An int representing the id of the second node in the pair of
+            nodes to find the distance between
 
     Returns:
         distance: A float representing the distance between node_1 and node_2
             in the given graph
     """
-    [x_1, y_1] = graph.intersections[node_1]
-    [x_2, y_2] = graph.intersections[node_2]
+    [x_1, y_1] = graph.intersections[node_1_id]
+    [x_2, y_2] = graph.intersections[node_2_id]
     distance = ((x_2 - x_1) ** 2 + (y_2 - y_1) ** 2) ** 0.5
 
     return distance
